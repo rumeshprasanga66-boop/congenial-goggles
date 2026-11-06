@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateSection } from "@/lib/ai/generate";
+import { resolveBrandVoiceText } from "@/lib/brand-voice/store";
 import { validateSectionRequest } from "@/lib/ai/validation";
 import { recordUsage } from "@/lib/usage";
 import {
@@ -32,7 +33,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { text, meta } = await generateSection(validated.value);
+    const brandVoice = await resolveBrandVoiceText(validated.value.brief.brandVoiceId);
+    const { text, meta } = await generateSection({
+      ...validated.value,
+      brief: { ...validated.value.brief, brandVoice },
+    });
     await recordUsage({
       operation: "section",
       model: meta.model,

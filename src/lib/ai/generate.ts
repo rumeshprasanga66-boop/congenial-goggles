@@ -12,6 +12,14 @@ import type { ValidatedBrief, ValidatedSectionRequest } from "./validation";
  * output shapes without making a network call.
  */
 
+/** A validated brief plus the resolved brand voice text, ready for a prompt. */
+export type GenerationBrief = ValidatedBrief & { brandVoice?: string };
+
+/** A section request whose brief already carries resolved brand voice text. */
+export type GenerationSectionRequest = Omit<ValidatedSectionRequest, "brief"> & {
+  brief: GenerationBrief;
+};
+
 export interface OutlineSection {
   title: string;
   summary: string;
@@ -53,7 +61,7 @@ function sectionFrom(entry: unknown): { title: string; summary: string } {
  * than rendered as blank or fabricated rows, and word targets are recomputed
  * locally so the provider cannot make the totals inconsistent.
  */
-export function parseOutline(text: string, brief: ValidatedBrief): Outline | null {
+export function parseOutline(text: string, brief: GenerationBrief): Outline | null {
   const raw = extractJson<RawOutline>(text);
   if (!raw || !Array.isArray(raw.sections)) return null;
 
@@ -97,7 +105,7 @@ export interface GenerationMeta {
 }
 
 export async function generateOutline(
-  brief: ValidatedBrief,
+  brief: GenerationBrief,
 ): Promise<{ outline: Outline; meta: GenerationMeta }> {
   const { system, user } = buildOutlinePrompt(brief);
   const result: CompletionResult = await complete(
@@ -124,7 +132,7 @@ export async function generateOutline(
 }
 
 export async function generateSection(
-  request: ValidatedSectionRequest,
+  request: GenerationSectionRequest,
 ): Promise<{ text: string; meta: GenerationMeta }> {
   const { system, user } = buildSectionPrompt(
     request.brief,

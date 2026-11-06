@@ -27,6 +27,8 @@ export interface ValidatedBrief {
   customWords?: number;
   targetWords: number;
   language: string;
+  /** Id of a saved brand voice to apply, if the user chose one. */
+  brandVoiceId?: string;
 }
 
 export type ValidationResult<T> =
@@ -81,6 +83,13 @@ export function validateBrief(input: unknown): ValidationResult<ValidatedBrief> 
 
   const language = asString(body.language) || "English";
 
+  // The id is only checked for shape here. Resolving it to a stored voice is the
+  // route's job, so this module stays free of any storage dependency.
+  const brandVoiceId = asString(body.brandVoiceId);
+  if (brandVoiceId.length > 100) {
+    errors.push("That brand voice reference is not valid.");
+  }
+
   let customWords: number | undefined;
   if (lengthRaw === "custom") {
     const raw = body.customWords;
@@ -109,6 +118,7 @@ export function validateBrief(input: unknown): ValidationResult<ValidatedBrief> 
       customWords,
       targetWords: targetWordCount(length, customWords),
       language,
+      brandVoiceId: brandVoiceId || undefined,
     },
   };
 }

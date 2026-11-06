@@ -23,6 +23,7 @@ import type { StudioBrief } from "./types";
  */
 export function BriefForm({
   brief,
+  brandVoices = [],
   onChange,
   onSubmit,
   submitting,
@@ -30,6 +31,8 @@ export function BriefForm({
   errors,
 }: {
   brief: StudioBrief;
+  /** Saved voices offered as a choice. Empty means no voices exist yet. */
+  brandVoices?: Array<{ id: string; name: string }>;
   onChange: (next: StudioBrief) => void;
   onSubmit: () => void;
   submitting: boolean;
@@ -37,6 +40,7 @@ export function BriefForm({
   errors: string[];
 }) {
   const topicId = useId();
+  const brandVoiceId = useId();
   const typeId = useId();
   const toneId = useId();
   const audienceId = useId();
@@ -180,6 +184,29 @@ export function BriefForm({
             </FieldHint>
           </div>
         )}
+      </div>
+
+      <div>
+        <Label htmlFor={brandVoiceId}>Brand voice</Label>
+        <Select
+          id={brandVoiceId}
+          value={brief.brandVoiceId}
+          onChange={(event) => update("brandVoiceId", event.target.value)}
+          disabled={disabled}
+          className="mt-1.5"
+        >
+          <option value="">None</option>
+          {brandVoices.map((voice) => (
+            <option key={voice.id} value={voice.id}>
+              {voice.name}
+            </option>
+          ))}
+        </Select>
+        <FieldHint>
+          {brandVoices.length === 0
+            ? "Save a brand voice in Brand Voice and it will be offered here."
+            : "Applied to the outline and every section written from it."}
+        </FieldHint>
       </div>
 
       <div>

@@ -51,7 +51,7 @@ describe("document store", () => {
     const raw = await readFile(path.join(dataDir, "documents.json"), "utf8");
     const parsed = JSON.parse(raw);
     assert.equal(parsed.version, 1);
-    assert.ok(parsed.documents.length >= 1);
+    assert.ok(parsed.items.length >= 1);
   });
 
   it("updates content and recomputes the word count", async () => {

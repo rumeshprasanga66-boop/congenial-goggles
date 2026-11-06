@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { buildBrainstormPrompt, isBrainstormKind } from "@/lib/ai/prompts";
 import { parseIdeas } from "@/lib/ai/brainstorm";
+import { resolveBrandVoiceText } from "@/lib/brand-voice/store";
 import { complete } from "@/lib/ai/provider";
 import { recordUsage } from "@/lib/usage";
 import {
@@ -48,8 +49,12 @@ export async function POST(request: Request) {
     ? Math.min(MAX_IDEAS, Math.max(MIN_IDEAS, Math.round(requestedCount)))
     : 10;
 
+  const brandVoiceId =
+    typeof input.brandVoiceId === "string" ? input.brandVoiceId : undefined;
+
   try {
-    const { system, user } = buildBrainstormPrompt(subject, input.kind, count);
+    const brandVoice = await resolveBrandVoiceText(brandVoiceId);
+    const { system, user } = buildBrainstormPrompt(subject, input.kind, count, brandVoice);
     const result = await complete(
       [
         { role: "system", content: system },

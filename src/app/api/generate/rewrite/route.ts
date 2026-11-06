@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { buildRewritePrompt, isRewriteAction } from "@/lib/ai/prompts";
 import { isToneId } from "@/lib/ai/options";
 import { cleanRewriteText } from "@/lib/ai/generate";
+import { resolveBrandVoiceText } from "@/lib/brand-voice/store";
 import { complete } from "@/lib/ai/provider";
 import { recordUsage } from "@/lib/usage";
 import {
@@ -50,8 +51,16 @@ export async function POST(request: Request) {
   const instructions =
     typeof input.instructions === "string" ? input.instructions : undefined;
 
+  const brandVoiceId =
+    typeof input.brandVoiceId === "string" ? input.brandVoiceId : undefined;
+
   try {
-    const { system, user } = buildRewritePrompt(text, input.action, { tone, instructions });
+    const brandVoice = await resolveBrandVoiceText(brandVoiceId);
+    const { system, user } = buildRewritePrompt(text, input.action, {
+      tone,
+      instructions,
+      brandVoice,
+    });
     const result = await complete(
       [
         { role: "system", content: system },

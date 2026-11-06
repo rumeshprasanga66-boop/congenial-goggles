@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateOutline } from "@/lib/ai/generate";
+import { resolveBrandVoiceText } from "@/lib/brand-voice/store";
 import { validateBrief } from "@/lib/ai/validation";
 import { recordUsage } from "@/lib/usage";
 import {
@@ -32,7 +33,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { outline, meta } = await generateOutline(validated.value);
+    const brandVoice = await resolveBrandVoiceText(validated.value.brandVoiceId);
+    const { outline, meta } = await generateOutline({ ...validated.value, brandVoice });
     await recordUsage({
       operation: "outline",
       model: meta.model,

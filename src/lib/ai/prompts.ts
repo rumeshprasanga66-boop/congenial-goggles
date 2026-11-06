@@ -72,8 +72,11 @@ export function buildOutlinePrompt(brief: WritingBrief): {
   const system = [
     "You are an experienced editor planning a piece of writing.",
     "Return only a JSON object. Do not wrap it in markdown fences and do not add commentary.",
+    brief.brandVoice?.trim() ? `Brand voice to follow:\n${brief.brandVoice.trim()}` : "",
     HOUSE_STYLE,
-  ].join("\n\n");
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   const user = [
     "Plan the structure for this piece.",
@@ -170,14 +173,19 @@ export function isRewriteAction(value: unknown): value is RewriteAction {
 export function buildRewritePrompt(
   text: string,
   action: RewriteAction,
-  options: { tone?: ToneId; instructions?: string } = {},
+  options: { tone?: ToneId; instructions?: string; brandVoice?: string } = {},
 ): { system: string; user: string } {
   const system = [
     "You are an editor improving an existing piece of writing.",
     "Return only the revised text. Do not explain what you changed and do not add commentary.",
+    options.brandVoice?.trim()
+      ? `Brand voice to follow:\n${options.brandVoice.trim()}`
+      : "",
     "Never add facts, names, numbers or claims that were not in the original.",
     HOUSE_STYLE,
-  ].join("\n\n");
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   const parts: string[] = [REWRITE_ACTIONS[action]];
   if (action === "tone" && options.tone) {
@@ -211,12 +219,16 @@ export function buildBrainstormPrompt(
   subject: string,
   kind: BrainstormKind,
   count = 10,
+  brandVoice = "",
 ): { system: string; user: string } {
   const system = [
     "You are a strategist generating ideas for a writer.",
     "Return only a JSON object. No markdown fences and no commentary.",
     "Ideas must be specific to the subject given. Do not produce generic filler.",
-  ].join("\n\n");
+    brandVoice.trim() ? `Brand voice to follow:\n${brandVoice.trim()}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   const user = [
     `Subject: ${subject.trim()}`,

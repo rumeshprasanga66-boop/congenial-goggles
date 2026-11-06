@@ -33,6 +33,20 @@ import {
  * is shown in full. The studio never simulates a result.
  */
 
+/** The brief fields the API accepts. Kept in one place so both calls match. */
+function briefPayload(brief: StudioBrief) {
+  return {
+    topic: brief.topic,
+    contentType: brief.contentType,
+    tone: brief.tone,
+    audience: brief.audience,
+    requirements: brief.requirements,
+    length: brief.length,
+    customWords: brief.customWords,
+    brandVoiceId: brief.brandVoiceId || undefined,
+  };
+}
+
 interface OutlineResponse {
   outline: {
     title: string;
@@ -44,9 +58,15 @@ interface SectionResponse {
   text: string;
 }
 
-export function WritingStudio() {
+export function WritingStudio({
+  initialBrief = EMPTY_BRIEF,
+  brandVoices = [],
+}: {
+  initialBrief?: StudioBrief;
+  brandVoices?: Array<{ id: string; name: string }>;
+} = {}) {
   const [step, setStep] = useState<StudioStep>("brief");
-  const [brief, setBrief] = useState<StudioBrief>(EMPTY_BRIEF);
+  const [brief, setBrief] = useState<StudioBrief>(initialBrief);
   const [outline, setOutline] = useState<StudioOutline | null>(null);
   const [briefErrors, setBriefErrors] = useState<string[]>([]);
   const [planning, setPlanning] = useState(false);
@@ -76,15 +96,10 @@ export function WritingStudio() {
     setBriefErrors([]);
     setPlanning(true);
     try {
-      const response = await postJson<OutlineResponse>("/api/generate/outline", {
-        topic: brief.topic,
-        contentType: brief.contentType,
-        tone: brief.tone,
-        audience: brief.audience,
-        requirements: brief.requirements,
-        length: brief.length,
-        customWords: brief.customWords,
-      });
+      const response = await postJson<OutlineResponse>(
+        "/api/generate/outline",
+        briefPayload(brief),
+      );
 
       setOutline({
         title: response.outline.title,
@@ -150,15 +165,7 @@ export function WritingStudio() {
 
       try {
         const response = await postJson<SectionResponse>("/api/generate/section", {
-          brief: {
-            topic: brief.topic,
-            contentType: brief.contentType,
-            tone: brief.tone,
-            audience: brief.audience,
-            requirements: brief.requirements,
-            length: brief.length,
-            customWords: brief.customWords,
-          },
+          brief: briefPayload(brief),
           sectionTitle: section.title,
           sectionSummary: section.summary,
           sectionWordTarget: section.wordTarget,
@@ -276,6 +283,7 @@ export function WritingStudio() {
           <CardBody className="sm:px-6 sm:py-5">
             <BriefForm
               brief={brief}
+              brandVoices={brandVoices}
               onChange={setBrief}
               onSubmit={planOutline}
               submitting={planning}

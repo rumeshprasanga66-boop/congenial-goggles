@@ -1,26 +1,28 @@
 import type { Metadata } from "next";
-import { Brain } from "lucide-react";
-import { ComingSoon } from "@/components/app/coming-soon";
 import { PageHeader } from "@/components/app/page-header";
+import { AiStatusNotice } from "@/components/studio/ai-status-notice";
+import { BrainstormWorkspace } from "@/components/brainstorm/brainstorm-workspace";
+import { listBrandVoices } from "@/lib/brand-voice/store";
 
 export const metadata: Metadata = {
   title: "Brainstorm",
   description: "Generate and organise ideas.",
 };
 
-export default function BrainstormPage() {
+export const dynamic = "force-dynamic";
+
+export default async function BrainstormPage() {
+  const voices = await listBrandVoices();
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Brainstorm"
         description="Turn a starting point into ideas, headlines, outlines and content plans."
       />
-      <ComingSoon
-        icon={Brain}
-        title="Brainstorming is not built yet"
-        description="Idea generation needs the AI backend and a place to save results. When it ships, any idea can be sent straight into a new document."
-        phase="Phase 4"
-        requires={["The server-side brainstorm route and an AI provider API key"]}
+      <AiStatusNotice />
+      <BrainstormWorkspace
+        brandVoices={voices.map((voice) => ({ id: voice.id, name: voice.name }))}
       />
     </div>
   );

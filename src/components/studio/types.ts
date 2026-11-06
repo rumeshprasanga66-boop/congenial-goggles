@@ -16,6 +16,8 @@ export interface StudioBrief {
   requirements: string;
   length: LengthId;
   customWords: number;
+  /** Saved brand voice to apply, or an empty string for none. */
+  brandVoiceId: string;
 }
 
 export const EMPTY_BRIEF: StudioBrief = {
@@ -26,7 +28,29 @@ export const EMPTY_BRIEF: StudioBrief = {
   requirements: "",
   length: "medium",
   customWords: 900,
+  brandVoiceId: "",
 };
+
+/** Build a brief from a template, keeping the user's own fields intact. */
+export function briefFromTemplate(
+  base: StudioBrief,
+  template: {
+    contentType: ContentType;
+    tone: ToneId;
+    length: LengthId;
+    guidance: string;
+    topicPrompt: string;
+  },
+): StudioBrief {
+  return {
+    ...base,
+    contentType: template.contentType,
+    tone: template.tone,
+    length: template.length,
+    requirements: template.guidance,
+    topic: template.topicPrompt,
+  };
+}
 
 export interface StudioSection {
   /** Stable key for React, independent of the title the user may edit. */
