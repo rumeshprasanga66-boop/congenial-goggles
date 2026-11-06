@@ -1,5 +1,15 @@
 import "server-only";
 
+import {
+  favouriteDocuments,
+  documentStats,
+  queryDocuments,
+  trashedDocuments,
+} from "./documents/query";
+import {
+  getDocument,
+  listAllDocuments,
+} from "./documents/store";
 import { listUsage } from "./usage";
 import type {
   BrandVoiceRecord,
@@ -12,11 +22,11 @@ import type {
 /**
  * Server-side data layer.
  *
- * Phase 1 runs without Supabase, so every read returns an empty result set
- * instead of fabricated sample data. Components therefore exercise their real
- * empty states from day one. Phase 3 replaces the bodies of these functions
- * with Supabase queries scoped by the authenticated user; the signatures and
- * return types are already the final ones.
+ * Documents are persisted by the file-backed store, so saving genuinely works
+ * today. Everything else still returns an empty result set rather than
+ * fabricated sample data, and components render their real empty states.
+ * Phase 5 replaces the remaining bodies with Supabase queries scoped by the
+ * authenticated user; the signatures and return types are already final.
  */
 
 /**
@@ -29,29 +39,36 @@ export const DEMO_MODE = !(
 );
 
 export async function getWorkspaceOverview(): Promise<WorkspaceOverview> {
+  const documents = await listDocuments();
+  const stats = documentStats(documents);
+
   return {
     metrics: {
-      totalDocuments: 0,
-      wordsWritten: 0,
-      aiGenerations: 0,
+      totalDocuments: stats.total,
+      wordsWritten: stats.words,
+      aiGenerations: (await listUsage()).length,
       // Credits are unknown until billing exists; null renders as "—".
       availableCredits: null,
     },
-    recentDocuments: [],
+    recentDocuments: queryDocuments(documents, { sort: "updated_desc" }).slice(0, 5),
     notifications: [],
   };
 }
 
 export async function listDocuments(): Promise<DocumentRecord[]> {
-  return [];
+  return queryDocuments(await listAllDocuments());
+}
+
+export async function getDocumentById(id: string): Promise<DocumentRecord | null> {
+  return getDocument(id);
 }
 
 export async function listFavoriteDocuments(): Promise<DocumentRecord[]> {
-  return [];
+  return favouriteDocuments(await listAllDocuments());
 }
 
 export async function listTrashedDocuments(): Promise<DocumentRecord[]> {
-  return [];
+  return trashedDocuments(await listAllDocuments());
 }
 
 export async function listTemplates(): Promise<TemplateRecord[]> {

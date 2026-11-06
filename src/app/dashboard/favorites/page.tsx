@@ -1,27 +1,32 @@
 import type { Metadata } from "next";
-import { Star } from "lucide-react";
-import { ComingSoon } from "@/components/app/coming-soon";
 import { PageHeader } from "@/components/app/page-header";
+import { Card } from "@/components/ui/card";
+import { DocumentTable } from "@/components/library/document-table";
+import { listFavoriteDocuments } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Favorites",
   description: "Documents you starred.",
 };
 
-export default function FavoritesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function FavoritesPage() {
+  const documents = await listFavoriteDocuments();
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Favorites"
         description="Quick access to the documents you return to most."
       />
-      <ComingSoon
-        icon={Star}
-        title="Favorites need document storage"
-        description="Starring a document only means something once documents are saved. This view will filter your library by the favorite flag."
-        phase="Phase 3"
-        requires={["The documents table with the is_favorite column"]}
-      />
+      <Card className="overflow-hidden">
+        <DocumentTable
+          documents={documents}
+          emptyTitle="No favourites yet"
+          emptyDescription="Star a document from the library and it will appear here for quick access."
+        />
+      </Card>
     </div>
   );
 }

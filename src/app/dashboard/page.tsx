@@ -22,13 +22,14 @@ function ConnectionNotice() {
       <div className="flex items-start gap-2.5">
         <Info className="mt-0.5 size-3.5 shrink-0 text-caution" aria-hidden="true" />
         <p className="text-xs leading-relaxed text-muted">
-          <span className="font-medium text-ink">No database is connected.</span>{" "}
-          The counts below are real but empty, and documents cannot be saved yet.
-          Add Supabase credentials to <code className="font-mono text-2xs">.env.local</code> to
-          enable storage.
+          <span className="font-medium text-ink">Documents are stored on this server.</span>{" "}
+          Saving works, but there are no accounts yet, so every visitor to this
+          deployment shares the same library. Sign-in and per-user isolation need
+          Supabase credentials in{" "}
+          <code className="font-mono text-2xs">.env.local</code>.
         </p>
       </div>
-      <span className="shrink-0 text-2xs font-medium text-caution">Phase 3</span>
+      <span className="shrink-0 text-2xs font-medium text-caution">Phase 5</span>
     </div>
   );
 }

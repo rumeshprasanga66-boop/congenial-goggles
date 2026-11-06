@@ -1,13 +1,7 @@
 import Link from "next/link";
-import {
-  Copy,
-  FileText,
-  PencilLine,
-  Star,
-  Trash2,
-} from "lucide-react";
+import { FileText } from "lucide-react";
+import { DocumentActions } from "@/components/library/document-actions";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Tooltip } from "@/components/ui/tooltip";
 import { formatNumber, formatRelativeTime } from "@/lib/format";
 import type { ContentType, DocumentRecord } from "@/lib/types";
 
@@ -28,33 +22,6 @@ const statusLabels: Record<DocumentRecord["status"], string> = {
   in_review: "In review",
   final: "Final",
 };
-
-function RowActions({ title }: { title: string }) {
-  const actions = [
-    { label: "Open", icon: PencilLine },
-    { label: "Rename", icon: FileText },
-    { label: "Duplicate", icon: Copy },
-    { label: "Favorite", icon: Star },
-    { label: "Delete", icon: Trash2 },
-  ];
-
-  return (
-    <div className="flex items-center justify-end gap-0.5">
-      {actions.map(({ label, icon: Icon }) => (
-        <Tooltip key={label} label={`${label} — available in Phase 3`}>
-          <button
-            type="button"
-            disabled
-            aria-label={`${label} ${title}`}
-            className="rounded-control p-1.5 text-faint disabled:cursor-not-allowed"
-          >
-            <Icon className="size-3.5" aria-hidden="true" />
-          </button>
-        </Tooltip>
-      ))}
-    </div>
-  );
-}
 
 export function RecentDocuments({
   documents,
@@ -109,10 +76,15 @@ export function RecentDocuments({
               className="border-b border-line last:border-0 hover:bg-subtle"
             >
               <td className="px-4 py-3">
-                <span className="flex items-center gap-2">
+                <Link
+                  href={`/dashboard/documents/${doc.id}`}
+                  className="flex items-center gap-2 rounded-control focus-visible:outline-none"
+                >
                   <FileText className="size-3.5 shrink-0 text-faint" aria-hidden="true" />
-                  <span className="truncate font-medium text-ink">{doc.title}</span>
-                </span>
+                  <span className="truncate font-medium text-ink hover:text-brand-ink">
+                    {doc.title}
+                  </span>
+                </Link>
               </td>
               <td className="px-4 py-3 text-muted">
                 {contentTypeLabels[doc.contentType]}
@@ -127,7 +99,7 @@ export function RecentDocuments({
                 {statusLabels[doc.status]}
               </td>
               <td className="px-4 py-3">
-                <RowActions title={doc.title} />
+                <DocumentActions document={doc} />
               </td>
             </tr>
           ))}

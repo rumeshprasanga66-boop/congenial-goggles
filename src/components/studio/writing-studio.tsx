@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Info } from "lucide-react";
+import Link from "next/link";
+import { AlertCircle, Check, Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
+import { cn } from "@/lib/cn";
 import { countWords } from "@/lib/format";
 import { BriefForm } from "./brief-form";
 import { OutlineEditor } from "./outline-editor";
@@ -49,6 +51,12 @@ export function WritingStudio() {
   const [briefErrors, setBriefErrors] = useState<string[]>([]);
   const [planning, setPlanning] = useState(false);
   const [writingAll, setWritingAll] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{
+    tone: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [savedDocumentId, setSavedDocumentId] = useState<string | null>(null);
 
   // Keeps each generation request able to see the latest accepted text without
   // making the callbacks depend on the whole outline object.
@@ -186,6 +194,58 @@ export function WritingStudio() {
     }
   }, [writeSection]);
 
+  /**
+   * Save the current draft to the library as a document. Sections that have not
+   * been written yet are omitted rather than saved as empty headings, so the
+   * stored document is exactly what the user can see.
+   */
+  const saveToLibrary = useCallback(async () => {
+    const current = outlineRef.current;
+    if (!current) return;
+
+    const written = current.sections.filter((section) => section.text);
+    if (written.length === 0) {
+      setSaveMessage({
+        tone: "error",
+        text: "Write at least one section before saving.",
+      });
+      return;
+    }
+
+    const content = written
+      .map((section) => `## ${section.title}\n\n${section.text}`)
+      .join("\n\n");
+
+    setSaving(true);
+    setSaveMessage(null);
+    try {
+      const response = await fetch("/api/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: current.title,
+          content,
+          contentType: brief.contentType,
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        setSaveMessage({
+          tone: "error",
+          text: body?.error ?? "The document could not be saved.",
+        });
+        return;
+      }
+      const body = await response.json();
+      setSavedDocumentId(body.document.id as string);
+      setSaveMessage({ tone: "success", text: "Saved to your library." });
+    } catch {
+      setSaveMessage({ tone: "error", text: "Could not reach the server." });
+    } finally {
+      setSaving(false);
+    }
+  }, [brief.contentType]);
+
   const completedSteps = useMemo(() => {
     const completed: StudioStep[] = [];
     if (outline) completed.push("brief");
@@ -253,7 +313,7 @@ export function WritingStudio() {
                 Generated from your brief. Edit any section in place.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button variant="secondary" size="sm" onClick={() => setStep("outline")}>
                 Edit outline
               </Button>
@@ -263,6 +323,21 @@ export function WritingStudio() {
                 disabled={writingAll || outline.sections.every((section) => section.text)}
               >
                 {writingAll ? "Writing…" : "Write remaining sections"}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void saveToLibrary()}
+                disabled={saving || !outline.sections.some((section) => section.text)}
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                    Saving…
+                  </>
+                ) : (
+                  "Save to library"
+                )}
               </Button>
             </div>
           </div>
@@ -282,11 +357,48 @@ export function WritingStudio() {
             ))}
           </div>
 
+          {saveMessage && (
+            <div
+              role={saveMessage.tone === "error" ? "alert" : "status"}
+              className={cn(
+                "flex items-start gap-2.5 rounded-control border px-3 py-2.5",
+                saveMessage.tone === "error"
+                  ? "border-danger/25 bg-danger/5"
+                  : "border-positive/25 bg-positive/5",
+              )}
+            >
+              {saveMessage.tone === "error" ? (
+                <AlertCircle className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden="true" />
+              ) : (
+                <Check className="mt-0.5 size-4 shrink-0 text-positive" aria-hidden="true" />
+              )}
+              <p
+                className={cn(
+                  "text-xs",
+                  saveMessage.tone === "error" ? "text-danger" : "text-ink",
+                )}
+              >
+                {saveMessage.text}
+                {savedDocumentId && saveMessage.tone === "success" && (
+                  <>
+                    {" "}
+                    <Link
+                      href={`/dashboard/documents/${savedDocumentId}`}
+                      className="font-medium text-brand-ink underline-offset-2 hover:underline"
+                    >
+                      Open it
+                    </Link>
+                  </>
+                )}
+              </p>
+            </div>
+          )}
+
           <div className="flex items-start gap-2.5 rounded-control border border-line bg-subtle px-3 py-2.5">
             <Info className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden="true" />
             <p className="text-xs text-muted">
-              Drafts are held in this browser tab only. Saving to your library arrives
-              with document storage, so nothing here is persisted yet.
+              Drafts live in this browser tab until you save them. Saving creates a
+              document in your library that you can reopen and edit.
             </p>
           </div>
         </div>
