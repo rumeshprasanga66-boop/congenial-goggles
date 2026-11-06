@@ -1,5 +1,6 @@
 import "server-only";
 
+import { listUsage } from "./usage";
 import type {
   BrandVoiceRecord,
   DocumentRecord,
@@ -62,5 +63,14 @@ export async function listBrandVoices(): Promise<BrandVoiceRecord[]> {
 }
 
 export async function listUsageRecords(): Promise<UsageRecord[]> {
-  return [];
+  // Usage is recorded by the generation routes into an in-process log. Reading
+  // it here means the usage page shows real requests as soon as they happen,
+  // rather than waiting for the database in Phase 5.
+  return listUsage();
 }
+
+/**
+ * Whether the usage log survives a restart. It does not yet, so the usage page
+ * says so instead of implying permanent history.
+ */
+export const USAGE_IS_DURABLE = false;
